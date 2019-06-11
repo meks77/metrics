@@ -1,0 +1,4 @@
+dependencies {
+    implementation platform('org.eclipse.microprofile:microprofile:2.2')
+    compileOnly group: 'javax.enterprise', name: 'cdi-api'
+}

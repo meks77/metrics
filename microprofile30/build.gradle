@@ -1,0 +1,7 @@
+dependencies {
+    implementation platform('org.eclipse.microprofile:microprofile:3.0-RC2')
+    compileOnly group: 'javax.enterprise', name: 'cdi-api'
+    compileOnly group: 'javax.interceptor', name: 'javax.interceptor-api'
+    compileOnly group: 'javax.annotation', name: 'javax.annotation-api'
+    compileOnly group: 'org.eclipse.microprofile.metrics', name: 'microprofile-metrics-api'
+}

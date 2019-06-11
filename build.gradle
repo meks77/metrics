@@ -1,0 +1,52 @@
+subprojects {
+    apply plugin: 'java'
+    group 'at.meks.metrics'
+    version '1.0-SNAPSHOT'
+
+    sourceCompatibility = 1.8
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        testCompile group: 'junit', name: 'junit', version: '4.12'
+        testCompile group: 'org.assertj', name: 'assertj-core', version: '3.12.2'
+    }
+}
+
+project (':jee7') {
+    dependencies {
+        implementation project (':api')
+    }
+}
+
+project (':microprofile30') {
+    dependencies {
+        implementation project (':api')
+    }
+}
+
+project (':demo:application') {
+    dependencies {
+        implementation project (':api')
+    }
+}
+
+project (':demo:demo-jee8') {
+    dependencies {
+        implementation project (':jee7'), project (':demo:application')
+    }
+}
+
+project (':demo:demo-jee7') {
+    dependencies {
+        implementation project (':jee7'), project (':demo:application')
+    }
+}
+
+project (':demo:demo-microprofile13') {
+    dependencies {
+        implementation project (':jee7'), project (':demo:application')
+    }
+}

@@ -1,0 +1,6 @@
+rootProject.name = 'metrics'
+include 'api', 'microprofile30', 'jee7', 'demo:application', 'demo:demo-jee7', 'demo:demo-jee8', 'demo:demo-microprofile13'
+findProject('demo:application')?.name = 'demo:application'
+findProject('demo:demo-jee7')?.name = 'demo:demo-jee7'
+findProject('demo:demo-jee8')?.name = 'demo:demo-jee8'
+findProject('demo:demo-microprofile13')?.name = 'demo:demo-microprofile13'

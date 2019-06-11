@@ -1,0 +1,8 @@
+plugins {
+    id 'war'
+}
+
+dependencies {
+    compileOnly group: 'javax', name: 'javaee-api', version: '7.0'
+    implementation group: 'io.prometheus', name: 'simpleclient_servlet', version: '0.6.0'
+}

@@ -1,0 +1,6 @@
+dependencies {
+    implementation platform('org.eclipse.microprofile:microprofile:2.2')
+    compileOnly group: 'javax.enterprise', name: 'cdi-api'
+    compileOnly group: 'javax.ws.rs', name: 'javax.ws.rs-api'
+    implementation group: 'javax.persistence', name: 'javax.persistence-api', version: '2.2'
+}

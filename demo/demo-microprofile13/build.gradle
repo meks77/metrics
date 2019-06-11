@@ -1,0 +1,14 @@
+apply plugin: 'war'
+
+repositories {
+    maven {
+        // undertow has a dependency to the jboss repo
+        url 'https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/'
+    }
+}
+dependencies {
+    implementation platform('io.thorntail:bom:2.4.0.Final')
+
+    compileOnly group: 'io.thorntail', name: 'jaxrs'
+    compileOnly group: 'io.thorntail', name: 'cdi'
+}
