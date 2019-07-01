@@ -15,14 +15,14 @@ It is expected that the docker host is available localy but with port 2375. That
 For the Test a lot of Ports need to be forwarded to the Docker VM. To this easily just execute the following scripts in a Powershell on Windows:
 
 ```
-for($i=32700;$i -le 32899;$i++) {
+for($i=32700;$i -le 32999;$i++) {
   .\VBoxManage.exe controlvm "Ubuntu Server" natpf1 "Tcp$i,tcp,,$i,,$i"
 }
 ```
 
 If you want to remove those ports again a script can be executed:
 ```
-for($i=32700;$i -le 32899;$i++) {
+for($i=32700;$i -le 32999;$i++) {
   .\VBoxManage.exe controlvm "Ubuntu Server" natpf1 delete "Tcp$i"
 }
 ```
