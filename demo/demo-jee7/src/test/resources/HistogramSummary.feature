@@ -12,7 +12,6 @@ Feature: Histogram(Microprofile Metrics) Summary(Prometheus) of executions of an
   50 % of the request (quantile 0.5) have a duration of ~ 0.1505 seconds
   0.75 % of the requests (quantile 0.75) have a duration of ~ 0.2005 seconds
   and so on
-    Given the new deployed application
     When employees are requested with following durations
       | times | duration |
       | 15    | 0.03     |
@@ -35,7 +34,6 @@ Feature: Histogram(Microprofile Metrics) Summary(Prometheus) of executions of an
     And the summary sum of the employee-requests is 15.06 with a deviation of 15 %
 
   Scenario: 2 Rest Service are executed more times
-    Given the new deployed application
     When employees are requested with following durations
       | times | duration |
       | 30    | 0.05     |

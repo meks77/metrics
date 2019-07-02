@@ -1,6 +1,7 @@
 package at.meks.metrics.demo.jee7;
 
 import cucumber.api.java.After;
+import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
@@ -34,31 +35,27 @@ public class CucumberSteps {
     private static final String METRICS_EXECUTION_SUMMARY_COUNT = "method_execution_summary_count";
     private static final String METRICS_EXECUTION_SUMMARY_SUM = "method_execution_summary_sum";
 
-    private GenericContainer jeeContainer;
+    private static final GenericContainer jeeContainer = new GenericContainer("test/demo-jee7:latest")
+            .withExposedPorts(8080)
+            .waitingFor(Wait.forHttp("/jee7").forStatusCode(403).withStartupTimeout(Duration.of(2, ChronoUnit.MINUTES)));
+
     private RestServiceExecutor webServiceExecutor;
     private MetricsAccessor metricsAccessor;
 
-    @After
-    public void shutdownAndCleanup() {
-        if (jeeContainer != null) {
-            if (jeeContainer.isRunning()) {
-                jeeContainer.stop();
-            }
-            jeeContainer.close();
+    @Before
+    public void startContainer() {
+        if (!jeeContainer.isRunning()) {
+            jeeContainer.start();
+            webServiceExecutor = new RestServiceExecutor(jeeContainer.getFirstMappedPort());
+            metricsAccessor = new MetricsAccessor(webServiceExecutor);
         }
     }
 
-    @SuppressWarnings("squid:S2095")
-    @Given("the new deployed application")
-    public void startApplication() {
-        // the container is stopped after each scenario. If try finally would be used, the container wouldn't be
-        // available in the scenario because directly after the step it would be closed
-        jeeContainer = new GenericContainer("test/demo-jee7:latest")
-                .withExposedPorts(8080)
-                .waitingFor(Wait.forHttp("/jee7").forStatusCode(403).withStartupTimeout(Duration.of(2, ChronoUnit.MINUTES)));
-        jeeContainer.start();
-        webServiceExecutor = new RestServiceExecutor(jeeContainer.getFirstMappedPort());
-        metricsAccessor = new MetricsAccessor(webServiceExecutor);
+    @After
+    public void stopContainer() {
+        if (jeeContainer.isRunning()) {
+            jeeContainer.stop();
+        }
     }
 
     @When("employees are requested {int} times")
