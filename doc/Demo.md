@@ -10,7 +10,7 @@ That means, when testing in an jee7 environment the demo-jee7 build
 
 For each test the docker container is started and after the test it is stopped. That takes a lot of time, but on the other hand it was less complex to implement the tests, because the metrics are reset.
 
-It is expected that the docker host is available localy but with port 2375. That is done to enable Windows Home clients, to run Docker in a VM and forward the Port to the docker VM.
+It is expected that the docker host is available localy but with port 2375. That is done to enable Windows Home clients, to run Docker in a VM and forward the Port to the docker VM. Therfore you have to set the environment variable DOCKER_HOST to tcp://localhost:2375
 
 For the Test a lot of Ports need to be forwarded to the Docker VM. To this easily just execute the following scripts in a Powershell on Windows:
 

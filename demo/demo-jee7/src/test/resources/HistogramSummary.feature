@@ -23,7 +23,7 @@ Feature: Histogram(Microprofile Metrics) Summary(Prometheus) of executions of an
       | 5     | 0.35     |
       | 2     | 0.5      |
       | 1     | 0.8      |
-    Then the summary of the employee-requests differs only by 10 %
+    Then the summary of the employee-requests differs only by 15 %
       | quantile | duration |
       | 0.5      | 0.1505   |
       | 0.75     | 0.2005   |
@@ -32,7 +32,7 @@ Feature: Histogram(Microprofile Metrics) Summary(Prometheus) of executions of an
       | 0.99     | 0.5005   |
       | 0.999    | 0.5005   |
     And the summary count of the employee-requests is 100
-    And the summary sum of the employee-requests is 15.06 with a deviation of 10 %
+    And the summary sum of the employee-requests is 15.06 with a deviation of 15 %
 
   Scenario: 2 Rest Service are executed more times
     Given the new deployed application
@@ -56,23 +56,23 @@ Feature: Histogram(Microprofile Metrics) Summary(Prometheus) of executions of an
       | 3     | 0.4      |
       | 2     | 0.7      |
       | 1     | 0.9      |
-    Then the summary of the employee-requests differs only by 10 %
+    Then the summary of the employee-requests differs only by 15 %
       | quantile | duration |
       | 0.5      | 0.1205   |
       | 0.75     | 0.2005   |
-      | 0.95     | 0.5005   |
+      | 0.95     | 0.7005   |
       | 0.98     | 0.9005   |
       | 0.99     | 0.9005   |
       | 0.999    | 0.9005   |
-    And the summary of the office-requests differs only by 10 %
+    And the summary of the office-requests differs only by 15 %
       | quantile | duration |
-      | 0.5      | 0.0505   |
+      | 0.5      | 0.1000   |
       | 0.75     | 0.1505   |
-      | 0.95     | 0.3505   |
+      | 0.95     | 0.4005   |
       | 0.98     | 0.7505   |
       | 0.99     | 0.7505   |
       | 0.999    | 0.7505   |
     And the summary count of the employee-requests is 100
     And the summary count of the office-requests is 100
-    And the summary sum of the employee-requests is 15.2 with a deviation of 10 %
-    And the summary sum of the office-requests is 7.4 with a deviation of 10 %
+    And the summary sum of the employee-requests is 15.2 with a deviation of 15 %
+    And the summary sum of the office-requests is 7.4 with a deviation of 15 %

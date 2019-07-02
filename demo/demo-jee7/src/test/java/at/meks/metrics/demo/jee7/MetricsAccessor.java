@@ -39,7 +39,7 @@ class MetricsAccessor {
         String key = metricName + "{" +
                 "class_name=\"at.meks.metrics.demo.application.EmployeeService\"," +
                 "method_name=\"" + methodName + "\"," +
-                "method_args=\"java.lang.Stringint\",";
+                "method_args=\"java.lang.Stringintjava.lang.Boolean\",";
         if (additionalKeyString != null) {
             key += additionalKeyString.get() + ",";
         }

@@ -34,16 +34,42 @@ public class EmployeeService {
     @MonitorDurationHistogram
     @MonitorExecutionCount
     public String getEmployee(@PathParam("id") String id,
-            @DefaultValue("-1") @QueryParam("sleepInMs") int sleepInMs) {
-        waitAsRequested(sleepInMs);
+            @DefaultValue("-1") @QueryParam("sleepInMs") int sleepInMs,
+            @QueryParam("fail") Boolean fail) {
+        failOrSleep(fail, sleepInMs);
         return "employee " + id;
     }
 
-    private void waitAsRequested(@QueryParam("sleepInMs") @DefaultValue("-1") int sleepInMs) {
+    private void failOrSleep(Boolean fail, int sleepInMs) {
+        throwExceptionIfShouldFail(fail);
+        sleepFor(sleepInMs);
+    }
+
+    private void throwExceptionIfShouldFail(Boolean fail) {
+        if ((fail == null && rnd.nextDouble() > 0.99) || Boolean.FALSE.equals(fail)) {
+            throw new IllegalStateException("Employee service not available");
+        }
+    }
+
+    private void sleepFor(int sleepInMs) {
         if (sleepInMs == -1) {
-            waitRandomlyOrThrowException();
+            sleepRandomly();
         } else {
-            wait(sleepInMs);
+            sleep(sleepInMs);
+        }
+    }
+
+    private void sleepRandomly() {
+        int millis = rnd.nextInt(300);
+        sleep(millis);
+    }
+
+    private void sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "sleep was interrupted", e);
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -54,27 +80,10 @@ public class EmployeeService {
     @MonitorDurationHistogram
     @MonitorExecutionCount
     public String getOfficeOfEmployee(@PathParam("employeeId") String employeeId,
-            @DefaultValue("-1") @QueryParam("sleepInMs") int sleepInMs) {
-        waitAsRequested(sleepInMs);
+            @DefaultValue("-1") @QueryParam("sleepInMs") int sleepInMs,
+            @QueryParam("fail") Boolean fail) {
+        failOrSleep(fail, sleepInMs);
         return "office of employee " + employeeId;
-    }
-
-    private void waitRandomlyOrThrowException() {
-        if (rnd.nextDouble() > 0.99) {
-            throw new IllegalStateException("Employee service not available");
-        } else {
-            int millis = rnd.nextInt(300);
-            wait(millis);
-        }
-    }
-
-    private void wait(int millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "sleep was interrupted", e);
-            Thread.currentThread().interrupt();
-        }
     }
 
 }

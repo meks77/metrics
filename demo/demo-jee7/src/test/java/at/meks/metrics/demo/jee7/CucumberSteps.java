@@ -18,8 +18,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
+import static java.lang.Double.parseDouble;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CucumberSteps {
@@ -33,7 +35,7 @@ public class CucumberSteps {
     private static final String METRICS_EXECUTION_SUMMARY_SUM = "method_execution_summary_sum";
 
     private GenericContainer jeeContainer;
-    private RestServiceExecutor serviceExecutor;
+    private RestServiceExecutor webServiceExecutor;
     private MetricsAccessor metricsAccessor;
 
     @After
@@ -55,13 +57,13 @@ public class CucumberSteps {
                 .withExposedPorts(8080)
                 .waitingFor(Wait.forHttp("/jee7").forStatusCode(403).withStartupTimeout(Duration.of(2, ChronoUnit.MINUTES)));
         jeeContainer.start();
-        serviceExecutor = new RestServiceExecutor(jeeContainer.getFirstMappedPort());
-        metricsAccessor = new MetricsAccessor(serviceExecutor);
+        webServiceExecutor = new RestServiceExecutor(jeeContainer.getFirstMappedPort());
+        metricsAccessor = new MetricsAccessor(webServiceExecutor);
     }
 
     @When("employees are requested {int} times")
     public void employeesAreRequestedTimes(int times) {
-        forTimesDo(times, () -> serviceExecutor.requestEmployee());
+        forTimesDo(times, () -> webServiceExecutor.requestEmployee());
     }
 
     private void forTimesDo(int times, Runnable runnable) {
@@ -70,7 +72,8 @@ public class CucumberSteps {
 
     @When("offices of employee are request {int} times")
     public void officesOfEmployeeAreRequestTimes(int times) {
-        forTimesDo(times, () -> serviceExecutor.requestOffice());
+        runWithThreads(threadExecutor ->
+                forTimesDo(times, () -> threadExecutor.submit(() -> webServiceExecutor.requestOffice())));
     }
 
     @Then("^the counter of the (employee|office)-requests was increased to (\\d*)$")
@@ -81,31 +84,42 @@ public class CucumberSteps {
 
     @When("employees are requested with following durations")
     public void requestEmployeesWithDurations(DataTable dataTable) {
-        forRowDo(dataTable, "times", this::invokeEmployeeService);
+        runWithThreads(threadExecutor ->
+                forRowDo(dataTable, "times", (times, duration) ->
+                        forTimesDo(times.intValue(),
+                                () -> threadExecutor.submit(() -> webServiceExecutor.requestEmployee(duration)))));
     }
 
-    private void forRowDo(DataTable dataTable, String leftColumnHeader, BiConsumer<Double, Double> timesDurationConsumer) {
-        List<Map<String, String>> durations = dataTable.asMaps();
-        ExecutorService executorService = Executors.newWorkStealingPool(100);
-        durations.forEach(row -> executorService.submit(() ->
-                timesDurationConsumer.accept(Double.parseDouble(row.get(leftColumnHeader)),
-                        Double.parseDouble(row.get("duration")))));
+    private void runWithThreads(Consumer<ExecutorService> jobSubmitter) {
+        ExecutorService executorService = Executors.newWorkStealingPool(10);
+        jobSubmitter.accept(executorService);
         executorService.shutdown();
         try {
-            executorService.awaitTermination(1, TimeUnit.MINUTES);
+            executorService.awaitTermination(3, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
+            e.printStackTrace();
             Thread.currentThread().interrupt();
         }
     }
 
-    private void invokeEmployeeService(double times, double duration) {
-        forTimesDo((int) times, () -> serviceExecutor.requestEmployee(duration));
+    private void forRowDo(DataTable dataTable, String leftColumnHeader, BiConsumer<Double, Double> timesDurationConsumer) {
+        List<Map<String, String>> durations = dataTable.asMaps();
+        durations.stream().sorted((left, right) -> getDuration(left).compareTo(getDuration(right))* -1)
+                .forEach(row -> timesDurationConsumer.accept(parseDouble(row.get(leftColumnHeader)),
+                    parseDouble(row.get("duration"))));
+
+    }
+
+    private Double getDuration(Map<String, String> row) {
+        return parseDouble(row.get("duration"));
     }
 
     @When("offices of employees are requested with following durations")
     public void requestOfficesWithDurations(DataTable dataTable) {
-        forRowDo(dataTable, "times", (times, duration) ->
-                forTimesDo(times.intValue(), () -> serviceExecutor.requestOffice(duration)));
+        runWithThreads(threadExecutor ->
+                forRowDo(dataTable, "times", (times, duration) ->
+                    forTimesDo(times.intValue(),
+                            () -> threadExecutor.submit(() -> webServiceExecutor.requestOffice(duration)))));
     }
 
     @Then("^the summary of the (employee|office)-requests differs only by (\\d*) %$")
