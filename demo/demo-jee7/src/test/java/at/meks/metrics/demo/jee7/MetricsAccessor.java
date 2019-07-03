@@ -52,7 +52,11 @@ class MetricsAccessor {
         return response.split("\n");
     }
 
-    String getMetricsLineKeyForSummary(double quantile, String methodName) {
+    String getMetricsLineKeyForSummary(String quantile, String methodName) {
         return getMetricsLineKey("method_execution_summary", methodName, () -> "quantile=\"" + quantile + "\"");
+    }
+
+    String getMetricsLineKeyForHistogram(String bucket, String methodName) {
+        return getMetricsLineKey("method_execution_histogram_bucket", methodName, () -> "le=\"" + bucket + "\"");
     }
 }

@@ -7,6 +7,7 @@
         bean-discovery-mode="all">
 
     <interceptors>
+        <class>at.meks.metrics.jee7.MonitorDurationHistogramSummaryInterceptor</class>
         <class>at.meks.metrics.jee7.MonitorDurationHistogramInterceptor</class>
         <class>at.meks.metrics.jee7.MonitorExceptionInterceptor</class>
         <class>at.meks.metrics.jee7.MonitorExecutionCountInterceptor</class>

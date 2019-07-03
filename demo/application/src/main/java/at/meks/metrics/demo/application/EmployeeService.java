@@ -2,6 +2,7 @@ package at.meks.metrics.demo.application;
 
 
 import at.meks.metrics.api.MonitorDurationHistogram;
+import at.meks.metrics.api.MonitorDurationHistogramSummary;
 import at.meks.metrics.api.MonitorException;
 import at.meks.metrics.api.MonitorExecutionCount;
 
@@ -31,6 +32,7 @@ public class EmployeeService {
     @Path("{id}")
     @Produces("text/plain")
     @MonitorException
+    @MonitorDurationHistogramSummary
     @MonitorDurationHistogram
     @MonitorExecutionCount
     public String getEmployee(@PathParam("id") String id,
@@ -46,6 +48,9 @@ public class EmployeeService {
     }
 
     private void throwExceptionIfShouldFail(Boolean fail) {
+        if (Boolean.FALSE.equals(fail)) {
+            return;
+        }
         boolean doRandomFail = fail == null && rnd.nextDouble() > 0.99;
         if (doRandomFail) {
             throw new IllegalStateException("random fail");
@@ -55,10 +60,12 @@ public class EmployeeService {
     }
 
     private void sleepFor(int sleepInMs) {
-        if (sleepInMs == -1) {
-            sleepRandomly();
-        } else {
-            sleep(sleepInMs);
+        if (sleepInMs != 0) {
+            if (sleepInMs == -1) {
+                sleepRandomly();
+            } else {
+                sleep(sleepInMs);
+            }
         }
     }
 
@@ -80,7 +87,7 @@ public class EmployeeService {
     @Path("office/{employeeId}")
     @Produces("text/plain")
     @MonitorException
-    @MonitorDurationHistogram
+    @MonitorDurationHistogramSummary
     @MonitorExecutionCount
     public String getOfficeOfEmployee(@PathParam("employeeId") String employeeId,
             @DefaultValue("-1") @QueryParam("sleepInMs") int sleepInMs,

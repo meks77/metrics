@@ -4,34 +4,9 @@ Feature: Histogram(Microprofile Metrics) Summary(Prometheus) of executions of an
   * Intel core i5-6200U
   * 8 GB RAM
   * Windows 10
-  * Docker in VirtualBox with Ubuntu Server 19.04 with 1 CPU und 3GB RAM
+  * Docker in VirtualBox with Ubuntu Server 19.04 with 2 CPU und 1.5GB RAM
 
   The question is if running the tests on other physical machines, if the result is nearly the same.
-
-  Scenario: 1 Rest Service is executed many times with diffent durations.
-  50 % of the request (quantile 0.5) have a duration of ~ 0.1505 seconds
-  0.75 % of the requests (quantile 0.75) have a duration of ~ 0.2005 seconds
-  and so on
-    When employees are requested with following durations
-      | times | duration |
-      | 15    | 0.03     |
-      | 22    | 0.08     |
-      | 28    | 0.15     |
-      | 17    | 0.20     |
-      | 10    | 0.25     |
-      | 5     | 0.35     |
-      | 2     | 0.5      |
-      | 1     | 0.8      |
-    Then the summary of the employee-requests differs only by 15 %
-      | quantile | duration |
-      | 0.5      | 0.1505   |
-      | 0.75     | 0.2005   |
-      | 0.95     | 0.3505   |
-      | 0.98     | 0.5005   |
-      | 0.99     | 0.5005   |
-      | 0.999    | 0.5005   |
-    And the summary count of the employee-requests is 100
-    And the summary sum of the employee-requests is 15.06 with a deviation of 15 %
 
   Scenario: 2 Rest Service are executed more times
     When employees are requested with following durations

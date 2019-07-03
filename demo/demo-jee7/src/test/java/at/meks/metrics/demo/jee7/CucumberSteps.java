@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CucumberSteps {
@@ -31,8 +32,13 @@ public class CucumberSteps {
     private static final String METHOD_GET_OFFICE_OF_EMPLOYEE = "getOfficeOfEmployee";
 
     private static final String METRICS_EXECUTION_COUNTER = "method_execution_counter";
+
     private static final String METRICS_EXECUTION_SUMMARY_COUNT = "method_execution_summary_count";
     private static final String METRICS_EXECUTION_SUMMARY_SUM = "method_execution_summary_sum";
+
+    private static final String METRIC_EXECUTION_HISTOGRAM_COUNT = "method_execution_histogram_count";
+    private static final String METRICS_EXECUTION_HISTOGRAM_SUM = "method_execution_histogram_sum";
+
     private static final String METRIC_METHOD_EXCEPTION = "method_exception";
 
     private static final GenericContainer jeeContainer = new GenericContainer("test/demo-jee7:latest")
@@ -96,13 +102,13 @@ public class CucumberSteps {
     @When("employees are requested with following durations")
     public void requestEmployeesWithDurations(DataTable dataTable) {
         runWithThreads(threadExecutor ->
-                forRowDo(dataTable, "times", (times, duration) ->
-                        forTimesDo(times.intValue(),
+                forRowDo(dataTable, "times", "duration", (times, duration) ->
+                        forTimesDo(parseInt(times),
                                 () -> threadExecutor.submit(() -> webServiceExecutor.requestEmployee(duration, false)))));
     }
 
     private void runWithThreads(Consumer<ExecutorService> jobSubmitter) {
-        ExecutorService executorService = Executors.newWorkStealingPool(10);
+        ExecutorService executorService = Executors.newWorkStealingPool(2);
         jobSubmitter.accept(executorService);
         executorService.shutdown();
         try {
@@ -113,12 +119,11 @@ public class CucumberSteps {
         }
     }
 
-    private void forRowDo(DataTable dataTable, String leftColumnHeader, BiConsumer<Double, Double> timesDurationConsumer) {
+    private void forRowDo(DataTable dataTable, String keyColumnHeader, String valueColumnHeader,
+            BiConsumer<String, Double> timesDurationConsumer) {
         List<Map<String, String>> durations = dataTable.asMaps();
-        durations.stream().sorted((left, right) -> getDuration(left).compareTo(getDuration(right))* -1)
-                .forEach(row -> timesDurationConsumer.accept(parseDouble(row.get(leftColumnHeader)),
-                    parseDouble(row.get("duration"))));
-
+        durations.forEach(row -> timesDurationConsumer.accept(row.get(keyColumnHeader),
+                    parseDouble(row.get(valueColumnHeader))));
     }
 
     private Double getDuration(Map<String, String> row) {
@@ -128,8 +133,8 @@ public class CucumberSteps {
     @When("offices of employees are requested with following durations")
     public void requestOfficesWithDurations(DataTable dataTable) {
         runWithThreads(threadExecutor ->
-                forRowDo(dataTable, "times", (times, duration) ->
-                    forTimesDo(times.intValue(),
+                forRowDo(dataTable, "times", "duration", (times, duration) ->
+                    forTimesDo(parseInt(times),
                             () -> threadExecutor.submit(() -> webServiceExecutor.requestOffice(duration, false)))));
     }
 
@@ -145,10 +150,11 @@ public class CucumberSteps {
 
     private void verifySummary(double deviationInPercent, DataTable dataTable, String methodName) {
         String[] metricLines = metricsAccessor.getMetrics();
-        forRowDo(dataTable, "quantile", (quantile, duration) -> verifySummaryLine(quantile, duration, deviationInPercent / 100.0, methodName, metricLines));
+        forRowDo(dataTable, "quantile", "duration", (quantile, duration) ->
+                verifySummaryLine(quantile, duration, deviationInPercent / 100.0, methodName, metricLines));
     }
 
-    private void verifySummaryLine(double quantile, double duration, double deviationInPercent, String methodName, String[] metricLines) {
+    private void verifySummaryLine(String quantile, double duration, double deviationInPercent, String methodName, String[] metricLines) {
         String lineKey = metricsAccessor.getMetricsLineKeyForSummary(quantile, methodName);
         Optional<Double> quantileMetricLine = metricsAccessor.getMetricsValue(metricLines, lineKey);
         assertThat(quantileMetricLine).isPresent();
@@ -165,20 +171,47 @@ public class CucumberSteps {
         return duration * (1.0 + deviationInPercent);
     }
 
-    @Then("^the summary count of the (employee|office)-requests is (\\d*)$")
-    public void verifySummaryCountOfEmployeeRequests(String method, int expectedCount) {
-        assertThat(metricsAccessor.getMetricsValue(METRICS_EXECUTION_SUMMARY_COUNT, getMethodName(method)))
+    @Then("^the (summary|histogram) count of the (employee|office)-requests is (\\d*)$")
+    public void verifyAdditionalMetricsCountOfEmployeeRequests(String summaryOrHistorgram, String method, int expectedCount) {
+        String metricName;
+        if ("summary".equals(summaryOrHistorgram)) {
+            metricName = METRICS_EXECUTION_SUMMARY_COUNT;
+        } else {
+            metricName = METRIC_EXECUTION_HISTOGRAM_COUNT;
+        }
+        assertThat(metricsAccessor.getMetricsValue(metricName, getMethodName(method)))
                 .hasValue((double) expectedCount);
     }
 
-    @Then("^the summary sum of the (employee|office)-requests is (\\d*.\\d*) with a deviation of (\\d*) %$")
-    public void verifySummarySum(String method, double expectedSum, int deviation) {
-        Optional<Double> actualSum = metricsAccessor.getMetricsValue(METRICS_EXECUTION_SUMMARY_SUM,
-                getMethodName(method));
+    @Then("^the (summary|histogram) sum of the (employee|office)-requests is (\\d*.\\d*) with a deviation of (\\d*) %$")
+    public void verifySummarySum(String summaryOrHistogram, String method, double expectedSum, int deviation) {
+        String metricName;
+        if ("summary".equals(summaryOrHistogram)) {
+            metricName = METRICS_EXECUTION_SUMMARY_SUM;
+        } else {
+            metricName = METRICS_EXECUTION_HISTOGRAM_SUM;
+        }
+        Optional<Double> actualSum = metricsAccessor.getMetricsValue(metricName, getMethodName(method));
         assertThat(actualSum).isPresent();
         //noinspection OptionalGetWithoutIsPresent
         assertThat(actualSum.get())
                 .isBetween(subtractDeviation(expectedSum, deviation), addDeviation(expectedSum, deviation));
+    }
+
+    @Then("^the histogram of the (employee|office)-requests differs only by (\\d*) %$")
+    public void verifyHistogramWithDeviation(String method, int deviationInPercent, DataTable dataTable) {
+        String[] metricLines = metricsAccessor.getMetrics();
+        forRowDo(dataTable, "duration less equals", "count", (bucket, count) ->
+                verifyHisogramLine(bucket, count.intValue(), deviationInPercent / 100.0, getMethodName(method), metricLines));
+    }
+
+    private void verifyHisogramLine(String bucket, int count, double deviation, String methodName, String[] metricLines) {
+        String lineKey = metricsAccessor.getMetricsLineKeyForHistogram(bucket, methodName);
+        Optional<Double> durationMetricLine = metricsAccessor.getMetricsValue(metricLines, lineKey);
+        assertThat(durationMetricLine).isPresent();
+        //noinspection OptionalGetWithoutIsPresent
+        assertThat(durationMetricLine.get()).describedAs("bucket " + bucket).
+                isBetween(Math.floor(subtractDeviation(count, deviation)), Math.ceil(addDeviation(count, deviation)));
     }
 
 }
