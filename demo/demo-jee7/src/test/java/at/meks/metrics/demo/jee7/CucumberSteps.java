@@ -2,7 +2,6 @@ package at.meks.metrics.demo.jee7;
 
 import cucumber.api.java.After;
 import cucumber.api.java.Before;
-import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import io.cucumber.datatable.DataTable;
@@ -34,6 +33,7 @@ public class CucumberSteps {
     private static final String METRICS_EXECUTION_COUNTER = "method_execution_counter";
     private static final String METRICS_EXECUTION_SUMMARY_COUNT = "method_execution_summary_count";
     private static final String METRICS_EXECUTION_SUMMARY_SUM = "method_execution_summary_sum";
+    private static final String METRIC_METHOD_EXCEPTION = "method_exception";
 
     private static final GenericContainer jeeContainer = new GenericContainer("test/demo-jee7:latest")
             .withExposedPorts(8080)
@@ -58,25 +58,39 @@ public class CucumberSteps {
         }
     }
 
-    @When("employees are requested {int} times")
-    public void employeesAreRequestedTimes(int times) {
-        forTimesDo(times, () -> webServiceExecutor.requestEmployee());
+    @When("^employees are requested (\\d*) times( with error)?$")
+    public void employeesAreRequestedTimes(int times, String withError) {
+        boolean requestWithError = " with error".equals(withError);
+        forTimesDo(times, () -> webServiceExecutor.requestEmployee(requestWithError));
     }
 
     private void forTimesDo(int times, Runnable runnable) {
         IntStream.range(0, times).forEach(index -> runnable.run());
     }
 
-    @When("offices of employee are request {int} times")
-    public void officesOfEmployeeAreRequestTimes(int times) {
+    @When("^offices of employee are request (\\d*) times( with error)?$")
+    public void officesOfEmployeeAreRequestTimes(int times, String withError) {
+        boolean requestWithError = " with error".equals(withError);
         runWithThreads(threadExecutor ->
-                forTimesDo(times, () -> threadExecutor.submit(() -> webServiceExecutor.requestOffice())));
+                forTimesDo(times, () -> threadExecutor.submit(() -> webServiceExecutor.requestOffice(requestWithError))));
     }
 
-    @Then("^the counter of the (employee|office)-requests was increased to (\\d*)$")
-    public void verifyCounterValue(String method, int expectedTimes) {
-        assertThat(metricsAccessor.getMetricsValue(METRICS_EXECUTION_COUNTER, getMethodName(method)))
+    @Then("^the (exception )?counter of the (employee|office)-requests was increased to (\\d*)$")
+    public void verifyCounterValue(String exceptionCounter, String method, int expectedTimes) {
+        String metricName = getMetricCounterName(exceptionCounter);
+        assertThat(metricsAccessor.getMetricsValue(metricName, getMethodName(method)))
                 .hasValue((double) expectedTimes);
+    }
+
+    @NotNull
+    private String getMetricCounterName(String exceptionCounter) {
+        String metricName;
+        if ("exception ".equals(exceptionCounter)) {
+            metricName = METRIC_METHOD_EXCEPTION;
+        } else {
+            metricName = METRICS_EXECUTION_COUNTER;
+        }
+        return metricName;
     }
 
     @When("employees are requested with following durations")
@@ -84,7 +98,7 @@ public class CucumberSteps {
         runWithThreads(threadExecutor ->
                 forRowDo(dataTable, "times", (times, duration) ->
                         forTimesDo(times.intValue(),
-                                () -> threadExecutor.submit(() -> webServiceExecutor.requestEmployee(duration)))));
+                                () -> threadExecutor.submit(() -> webServiceExecutor.requestEmployee(duration, false)))));
     }
 
     private void runWithThreads(Consumer<ExecutorService> jobSubmitter) {
@@ -116,7 +130,7 @@ public class CucumberSteps {
         runWithThreads(threadExecutor ->
                 forRowDo(dataTable, "times", (times, duration) ->
                     forTimesDo(times.intValue(),
-                            () -> threadExecutor.submit(() -> webServiceExecutor.requestOffice(duration)))));
+                            () -> threadExecutor.submit(() -> webServiceExecutor.requestOffice(duration, false)))));
     }
 
     @Then("^the summary of the (employee|office)-requests differs only by (\\d*) %$")

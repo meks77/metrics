@@ -46,8 +46,11 @@ public class EmployeeService {
     }
 
     private void throwExceptionIfShouldFail(Boolean fail) {
-        if ((fail == null && rnd.nextDouble() > 0.99) || Boolean.FALSE.equals(fail)) {
-            throw new IllegalStateException("Employee service not available");
+        boolean doRandomFail = fail == null && rnd.nextDouble() > 0.99;
+        if (doRandomFail) {
+            throw new IllegalStateException("random fail");
+        } else if (Boolean.TRUE.equals(fail)) {
+            throw new IllegalStateException("requested to fail");
         }
     }
 
