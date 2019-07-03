@@ -88,6 +88,7 @@ public class EmployeeService {
     @Produces("text/plain")
     @MonitorException
     @MonitorDurationHistogramSummary
+    @MonitorDurationHistogram
     @MonitorExecutionCount
     public String getOfficeOfEmployee(@PathParam("employeeId") String employeeId,
             @DefaultValue("-1") @QueryParam("sleepInMs") int sleepInMs,

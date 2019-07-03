@@ -19,8 +19,5 @@ test.dependsOn(buildDockerImage)
 dependencies {
     compileOnly group: 'javax', name: 'javaee-api', version: '7.0'
     implementation group: 'io.prometheus', name: 'simpleclient_servlet', version: '0.6.0'
-    testCompile 'org.testcontainers:testcontainers:1.11.3'
-    testImplementation 'io.cucumber:cucumber-java:4.2.6'
     testImplementation 'io.cucumber:cucumber-junit:4.2.6'
-    testImplementation 'io.rest-assured:rest-assured:4.0.0'
 }

@@ -1,0 +1,8 @@
+dependencies {
+    implementation group: 'junit', name: 'junit', version: '4.12'
+    implementation group: 'org.assertj', name: 'assertj-core', version: '3.12.2'
+    implementation 'io.cucumber:cucumber-java:4.2.6'
+    implementation 'io.cucumber:cucumber-junit:4.2.6'
+    implementation 'io.rest-assured:rest-assured:4.0.0'
+    implementation 'org.testcontainers:testcontainers:1.11.3'
+}

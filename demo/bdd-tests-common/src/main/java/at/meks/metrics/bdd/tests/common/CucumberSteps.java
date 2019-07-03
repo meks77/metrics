@@ -1,4 +1,4 @@
-package at.meks.metrics.demo.jee7;
+package at.meks.metrics.bdd.tests.common;
 
 import cucumber.api.java.After;
 import cucumber.api.java.Before;
@@ -19,6 +19,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 import static java.lang.Double.parseDouble;
@@ -44,6 +46,10 @@ public class CucumberSteps {
     private static final GenericContainer jeeContainer = new GenericContainer("test/demo-jee7:latest")
             .withExposedPorts(8080)
             .waitingFor(Wait.forHttp("/jee7").forStatusCode(403).withStartupTimeout(Duration.of(2, ChronoUnit.MINUTES)));
+
+    private static final String DURATION_COL = "duration";
+
+    private Logger log = Logger.getLogger(getClass().getName());
 
     private RestServiceExecutor webServiceExecutor;
     private MetricsAccessor metricsAccessor;
@@ -88,7 +94,6 @@ public class CucumberSteps {
                 .hasValue((double) expectedTimes);
     }
 
-    @NotNull
     private String getMetricCounterName(String exceptionCounter) {
         String metricName;
         if ("exception ".equals(exceptionCounter)) {
@@ -102,7 +107,7 @@ public class CucumberSteps {
     @When("employees are requested with following durations")
     public void requestEmployeesWithDurations(DataTable dataTable) {
         runWithThreads(threadExecutor ->
-                forRowDo(dataTable, "times", "duration", (times, duration) ->
+                forRowDo(dataTable, "times", DURATION_COL, (times, duration) ->
                         forTimesDo(parseInt(times),
                                 () -> threadExecutor.submit(() -> webServiceExecutor.requestEmployee(duration, false)))));
     }
@@ -114,7 +119,7 @@ public class CucumberSteps {
         try {
             executorService.awaitTermination(3, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "unexcepted interrupt", e);
             Thread.currentThread().interrupt();
         }
     }
@@ -124,10 +129,6 @@ public class CucumberSteps {
         List<Map<String, String>> durations = dataTable.asMaps();
         durations.forEach(row -> timesDurationConsumer.accept(row.get(keyColumnHeader),
                     parseDouble(row.get(valueColumnHeader))));
-    }
-
-    private Double getDuration(Map<String, String> row) {
-        return parseDouble(row.get("duration"));
     }
 
     @When("offices of employees are requested with following durations")
@@ -202,13 +203,13 @@ public class CucumberSteps {
     public void verifyHistogramWithDeviation(String method, int deviationInPercent, DataTable dataTable) {
         String[] metricLines = metricsAccessor.getMetrics();
         forRowDo(dataTable, "duration less equals", "count", (bucket, count) ->
-                verifyHisogramLine(bucket, count.intValue(), deviationInPercent / 100.0, getMethodName(method), metricLines));
+                verifyHistogramLine(bucket, count.intValue(), deviationInPercent / 100.0, getMethodName(method), metricLines));
     }
 
-    private void verifyHisogramLine(String bucket, int count, double deviation, String methodName, String[] metricLines) {
+    private void verifyHistogramLine(String bucket, int count, double deviation, String methodName, String[] metricLines) {
         String lineKey = metricsAccessor.getMetricsLineKeyForHistogram(bucket, methodName);
         Optional<Double> durationMetricLine = metricsAccessor.getMetricsValue(metricLines, lineKey);
-        assertThat(durationMetricLine).isPresent();
+        assertThat(durationMetricLine).describedAs("bucket " + bucket).isPresent();
         //noinspection OptionalGetWithoutIsPresent
         assertThat(durationMetricLine.get()).describedAs("bucket " + bucket).
                 isBetween(Math.floor(subtractDeviation(count, deviation)), Math.ceil(addDeviation(count, deviation)));

@@ -41,7 +41,7 @@ project (':demo:demo-jee8') {
 
 project (':demo:demo-jee7') {
     dependencies {
-        implementation project (':jee7'), project (':demo:application')
+        implementation project (':jee7'), project (':demo:application'), project (':demo:bdd-tests-common')
     }
 }
 

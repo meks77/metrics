@@ -1,4 +1,4 @@
-package at.meks.metrics.demo.jee7;
+package at.meks.metrics.bdd.tests.common;
 
 import io.restassured.RestAssured;
 import org.jetbrains.annotations.NotNull;
