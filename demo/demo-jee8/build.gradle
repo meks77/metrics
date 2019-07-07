@@ -1,8 +1,25 @@
 plugins {
     id 'war'
+    id 'com.bmuschko.docker-remote-api' version '4.10.0'
 }
+
+docker {
+    url = 'tcp://localhost:2375'
+}
+
+import com.bmuschko.gradle.docker.tasks.image.*
+
+task buildDockerImage(type: DockerBuildImage) {
+    inputDir = file('.')
+    tags.add('test/demo-jee8')
+}
+
+test.dependsOn(buildDockerImage)
 
 dependencies {
     compileOnly group: 'javax', name: 'javaee-api', version: '8.0'
     implementation group: 'io.prometheus', name: 'simpleclient_servlet', version: '0.6.0'
+    testImplementation 'io.cucumber:cucumber-java:4.2.6'
+    testImplementation 'io.cucumber:cucumber-picocontainer:4.2.6'
+    testImplementation 'io.cucumber:cucumber-junit:4.2.6'
 }

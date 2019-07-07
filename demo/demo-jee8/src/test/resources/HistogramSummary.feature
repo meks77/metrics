@@ -9,7 +9,7 @@ Feature: Histogram(Microprofile Metrics) Summary(Prometheus) of executions of an
   The question is if running the tests on other physical machines, if the result is nearly the same.
 
   Scenario: 2 Rest Service are executed more times
-    Given the jee7 demo application
+    Given the jee8 demo application
     When employees are requested with following durations
       | times | duration |
       | 30    | 0.05     |

@@ -1,16 +1,11 @@
 package at.meks.metrics.bdd.tests.common;
 
 import cucumber.api.java.After;
-import cucumber.api.java.Before;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import io.cucumber.datatable.DataTable;
 import org.jetbrains.annotations.NotNull;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class CucumberSteps {
 
-
     private static final String METHOD_GET_EMPLOYEE = "getEmployee";
     private static final String METHOD_GET_OFFICE_OF_EMPLOYEE = "getOfficeOfEmployee";
 
@@ -43,31 +37,24 @@ public class CucumberSteps {
 
     private static final String METRIC_METHOD_EXCEPTION = "method_exception";
 
-    private static final GenericContainer jeeContainer = new GenericContainer("test/demo-jee7:latest")
-            .withExposedPorts(8080)
-            .waitingFor(Wait.forHttp("/jee7").forStatusCode(403).withStartupTimeout(Duration.of(2, ChronoUnit.MINUTES)));
-
     private static final String DURATION_COL = "duration";
 
     private Logger log = Logger.getLogger(getClass().getName());
 
-    private RestServiceExecutor webServiceExecutor;
-    private MetricsAccessor metricsAccessor;
+    private final RestServiceExecutor webServiceExecutor;
+    private final MetricsAccessor metricsAccessor;
+    private final ContainerManager containerManager;
 
-    @Before
-    public void startContainer() {
-        if (!jeeContainer.isRunning()) {
-            jeeContainer.start();
-            webServiceExecutor = new RestServiceExecutor(jeeContainer.getFirstMappedPort());
-            metricsAccessor = new MetricsAccessor(webServiceExecutor);
-        }
+    public CucumberSteps(RestServiceExecutor webServiceExecutor, MetricsAccessor metricsAccessor,
+            ContainerManager containerManager) {
+        this.webServiceExecutor = webServiceExecutor;
+        this.metricsAccessor = metricsAccessor;
+        this.containerManager = containerManager;
     }
 
     @After
     public void stopContainer() {
-        if (jeeContainer.isRunning()) {
-            jeeContainer.stop();
-        }
+        containerManager.stopContainer();
     }
 
     @When("^employees are requested (\\d*) times( with error)?$")
@@ -134,7 +121,7 @@ public class CucumberSteps {
     @When("offices of employees are requested with following durations")
     public void requestOfficesWithDurations(DataTable dataTable) {
         runWithThreads(threadExecutor ->
-                forRowDo(dataTable, "times", "duration", (times, duration) ->
+                forRowDo(dataTable, "times", DURATION_COL, (times, duration) ->
                     forTimesDo(parseInt(times),
                             () -> threadExecutor.submit(() -> webServiceExecutor.requestOffice(duration, false)))));
     }

@@ -1,7 +1,7 @@
 Feature: Counting the occured exceptions
 
   Scenario: 2 Rest Service are executed more times. The counter is increased per execution
-    Given the jee7 demo application
+    Given the jee8 demo application
     When employees are requested 13 times
     And employees are requested 4 times with error
     And offices of employee are request 25 times

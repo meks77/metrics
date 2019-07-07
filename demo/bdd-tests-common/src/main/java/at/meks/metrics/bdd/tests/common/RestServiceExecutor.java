@@ -3,14 +3,16 @@ package at.meks.metrics.bdd.tests.common;
 import io.restassured.RestAssured;
 import org.jetbrains.annotations.NotNull;
 
-class RestServiceExecutor {
+public class RestServiceExecutor {
 
-    private static final String EMPLOYEE_BASE_URL = "jee7/api/v1.0/employee/15";
-    private static final String OFFICE_BASE_URL = "jee7/api/v1.0/employee/office/15";
-    private final int serverPort;
+    private static final String SERVICE_ROOT_URL = "api/v1.0/employee/";
+    private static final String EMPLOYEE_BASE_URL = SERVICE_ROOT_URL + "15";
+    private static final String OFFICE_BASE_URL = SERVICE_ROOT_URL + "office/15";
 
-    RestServiceExecutor(int serverPort) {
-        this.serverPort = serverPort;
+    private final TestedApplication testedApplication;
+
+    public RestServiceExecutor(TestedApplication testedApplication) {
+        this.testedApplication = testedApplication;
     }
 
     void requestEmployee(boolean requestWithError) {
@@ -34,7 +36,8 @@ class RestServiceExecutor {
     }
 
     String getUrl(String relativeUrl) {
-        return "http://localhost:" + serverPort + "/" + relativeUrl;
+        return "http://localhost:" + testedApplication.getApplicationServerPort() +
+                "/" + testedApplication.getApplicationWebContextRoot() + "/" + relativeUrl;
     }
 
     @NotNull

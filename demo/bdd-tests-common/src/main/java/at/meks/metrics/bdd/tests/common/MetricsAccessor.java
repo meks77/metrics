@@ -7,13 +7,13 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-class MetricsAccessor {
+public class MetricsAccessor {
 
-    private static final String METRICS_URL = "jee7/metrics";
+    private static final String METRICS_URL = "metrics";
 
     private final RestServiceExecutor serviceExecutor;
 
-    MetricsAccessor(RestServiceExecutor serviceExecutor) {
+    public MetricsAccessor(RestServiceExecutor serviceExecutor) {
         this.serviceExecutor = serviceExecutor;
     }
 
